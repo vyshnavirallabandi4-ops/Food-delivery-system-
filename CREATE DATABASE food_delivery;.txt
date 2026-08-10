@@ -1,0 +1,163 @@
+CREATE DATABASE food_delivery;
+USE food_delivery;
+
+CREATE TABLE customers (
+    customer_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    phone VARCHAR(15) UNIQUE NOT NULL,
+    email VARCHAR(100),
+    address VARCHAR(255),
+    city VARCHAR(100)
+);
+
+CREATE TABLE restaurants (
+    restaurant_id INT PRIMARY KEY AUTO_INCREMENT,
+    restaurant_name VARCHAR(100) NOT NULL,
+    city VARCHAR(100),
+    cuisine VARCHAR(100),
+    rating DECIMAL(2,1)
+);
+
+CREATE TABLE delivery_partners (
+    delivery_partner_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    phone VARCHAR(15) UNIQUE,
+    vehicle_type VARCHAR(50),
+    rating DECIMAL(2,1)
+);
+
+CREATE TABLE menu_items (
+    item_id INT PRIMARY KEY AUTO_INCREMENT,
+    restaurant_id INT,
+    item_name VARCHAR(100) NOT NULL,
+    category VARCHAR(50),
+    price DECIMAL(10,2),
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(restaurant_id)
+);
+
+CREATE TABLE orders (
+    order_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    restaurant_id INT,
+    delivery_partner_id INT,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50),
+    delivery_address VARCHAR(255),
+    total_amount DECIMAL(10,2),
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(restaurant_id),
+    FOREIGN KEY (delivery_partner_id) REFERENCES delivery_partners(delivery_partner_id)
+);
+
+CREATE TABLE order_items (
+    order_item_id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT,
+    item_id INT,
+    quantity INT,
+    price DECIMAL(10,2),
+    FOREIGN KEY (order_id) REFERENCES orders(order_id),
+    FOREIGN KEY (item_id) REFERENCES menu_items(item_id)
+);
+
+CREATE TABLE payments (
+    payment_id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT,
+    payment_method VARCHAR(50),
+    payment_status VARCHAR(50),
+    transaction_id VARCHAR(100),
+    FOREIGN KEY (order_id) REFERENCES orders(order_id)
+);
+
+CREATE TABLE reviews (
+    review_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    restaurant_id INT,
+    order_id INT,
+    rating INT,
+    comment VARCHAR(500),
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(restaurant_id),
+    FOREIGN KEY (order_id) REFERENCES orders(order_id)
+);
+
+INSERT INTO customers (name,phone,email,address,city) VALUES
+('Rahul Kumar','9876543210','rahul@gmail.com','MG Road','Bangalore'),
+('Vamsi Reddy','9876543211','vamsi@gmail.com','Main Road','Nellore'),
+('Arjun Singh','9876543212','arjun@gmail.com','Banjara Hills','Hyderabad'),
+('Priya Sharma','9876543213','priya@gmail.com','Indiranagar','Bangalore');
+
+INSERT INTO restaurants (restaurant_name,city,cuisine,rating) VALUES
+('Paradise Biryani','Hyderabad','Biryani',4.5),
+('Pizza House','Bangalore','Italian',4.2),
+('South Indian Meals','Chennai','South Indian',4.6),
+('Burger Point','Hyderabad','Fast Food',4.1);
+
+INSERT INTO delivery_partners (name,phone,vehicle_type,rating) VALUES
+('Ravi','9111111111','Bike',4.8),
+('Suresh','9111111112','Bike',4.6),
+('Kiran','9111111113','Scooter',4.7),
+('Manoj','9111111114','Bike',4.4);
+
+INSERT INTO menu_items (restaurant_id,item_name,category,price) VALUES
+(1,'Chicken Biryani','Biryani',250),
+(1,'Mutton Biryani','Biryani',320),
+(1,'Veg Biryani','Biryani',180),
+(2,'Margherita Pizza','Pizza',299),
+(2,'Farmhouse Pizza','Pizza',399),
+(2,'Paneer Pizza','Pizza',429),
+(3,'Masala Dosa','Breakfast',100),
+(3,'Idli Vada','Breakfast',90),
+(3,'Veg Meals','Meals',180),
+(4,'Chicken Burger','Burger',199),
+(4,'Veg Burger','Burger',149),
+(4,'French Fries','Sides',99);
+
+INSERT INTO orders
+(customer_id,restaurant_id,delivery_partner_id,status,delivery_address,total_amount)
+VALUES
+(1,1,1,'DELIVERED','MG Road, Bangalore',547),
+(2,2,2,'DELIVERED','Main Road, Nellore',449),
+(3,4,3,'OUT_FOR_DELIVERY','Banjara Hills, Hyderabad',340),
+(4,3,4,'PLACED','Indiranagar, Bangalore',319);
+
+INSERT INTO order_items (order_id,item_id,quantity,price) VALUES
+(1,1,2,250),
+(2,5,1,399),
+(3,10,1,199),
+(3,12,1,99),
+(4,7,2,100),
+(4,8,1,90);
+
+INSERT INTO payments
+(order_id,payment_method,payment_status,transaction_id)
+VALUES
+(1,'UPI','SUCCESS','TXN10001'),
+(2,'CREDIT CARD','SUCCESS','TXN10002'),
+(3,'UPI','SUCCESS','TXN10003'),
+(4,'CASH','PENDING','TXN10004');
+
+INSERT INTO reviews
+(customer_id,restaurant_id,order_id,rating,comment)
+VALUES
+(1,1,1,5,'Excellent biryani'),
+(2,2,2,4,'Good pizza'),
+(3,4,3,4,'Tasty burger');
+
+SELECT
+    o.order_id,
+    c.name AS customer,
+    r.restaurant_name,
+    m.item_name,
+    oi.quantity,
+    oi.price,
+    o.total_amount,
+    o.status,
+    p.payment_method,
+    p.payment_status
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+JOIN restaurants r ON o.restaurant_id = r.restaurant_id
+JOIN order_items oi ON o.order_id = oi.order_id
+JOIN menu_items m ON oi.item_id = m.item_id
+LEFT JOIN payments p ON o.order_id = p.order_id
+ORDER BY o.order_date DESC;
